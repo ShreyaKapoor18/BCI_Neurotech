@@ -53,7 +53,10 @@ gc.collect()
 for key in event_id.keys():
     evoked = epochs[key].average()
     evoked.plot()
+    # topomaps cant be displayed
 #%%
+
+
 #%%
 '''
 event_id_rev = {k:v for v,k in event_id.items()}
