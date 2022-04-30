@@ -22,6 +22,13 @@ ch_types = ['ecog'] * 60
 info = mne.create_info(ch_names=col_names, ch_types=ch_types, sfreq=sampling_freq)
 # Load the data
 data = loadmat(r"C:\Users\Shreya Kapoor\Desktop\ECoG\ECoG_Handpose.mat")['y']
+
+# the datastructure is as follows: 67 * 507025 because
+# 67 = n_channels in total
+# n_trials = 90 
+# each trial has rock paper scissor 2-3 secs and other 2 s of blank screen ~ total 5 s
+# so total data points are = 90 * trial duration *frequency ~ 507025
+# total experiment duration is 450 secs or so
 # Index 1-60 means channels 2-61
 raw = mne.io.RawArray(data[1:61,:], info) # we dont need the first channel
 timings = data[0,:]
