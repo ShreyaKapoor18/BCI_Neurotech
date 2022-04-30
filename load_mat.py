@@ -48,8 +48,3 @@ for i in range(1,61): #since the first channel is for the timings, ignore index 
     
 plt.savefig('Initial_view.jpg')
 #%%
-import mne 
-path = r"C:\Users\Shreya Kapoor\Desktop\ECoG\ECoG_Handpose.mat"
-raw = mne.read
-
-# %%
