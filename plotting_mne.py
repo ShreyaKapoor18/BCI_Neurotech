@@ -46,7 +46,7 @@ print(events)
 raw.pick_types(ecog=True)
 event_id = dict( fist_movement = 1 , peace_movement = 2 , open_hand = 3 )
 epochs = mne.Epochs(raw, events, tmin=-0.75, tmax=0.75, event_id=event_id,
-                    preload=True)
+                    preload=True, baseline=None)
 del data
 gc.collect()
 #%%
@@ -97,12 +97,19 @@ average. After that, a notch-filter cascade (recursive 6th-order
 Butterworth, bandwidth: 5 Hz) up to the 6th harmonic was
 used to remove interference peaks from the spectrum at integer
 multiples of the power line frequency'''
-
+del events
+gc.collect()
+#%%
 # They set the trial length to 0.75 seconds pre- and post-onset, respectively
-full_mean = raw._data.mean()
+#full_mean = raw._data.mean()
 #mean_col =# get the meaning of the column
-raw._data -= full_mean # this could cause bias though
-raw.notch_filter([60], trans_bandwidth=5)
+#raw._data -= full_mean # this could cause bias though
+raw.set_eeg_reference('average')
+nf = 50
+hf = 150
+raw.filter(1, hf)
+raw.notch_filter([nf], notch_widths=2, trans_bandwidth=1) 
+#raw.notch_filter([50], trans_bandwidth=5)
 
 #picks = mne.pick_types(raw.info, meg='grad', exclude='bads')
 
@@ -149,4 +156,60 @@ plt.show()
 # cut the data according to the trial and class
 # in total there are 90 trials, each of around 5s
 
+#%%
+del  raw
+#%%
+# %%
+# Define a monte-carlo cross-validation generator (reduce variance):
+import numpy as np
+import matplotlib.pyplot as plt
+
+from sklearn.pipeline import Pipeline
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.model_selection import ShuffleSplit, cross_val_score
+
+from mne import Epochs, pick_types, events_from_annotations
+from mne.channels import make_standard_montage
+from mne.io import concatenate_raws, read_raw_edf
+from mne.datasets import eegbci
+from mne.decoding import CSP
+epochs_train = epochs.copy().crop(tmin=-0.75, tmax=0.75)
+labels = epochs.events[:, -1] - 2
+scores = []
+epochs_data = epochs.get_data()
+epochs_data_train = epochs_train.get_data()
+cv = ShuffleSplit(5, test_size=0.15, random_state=88)
+cv_split = cv.split(epochs_data_train)
+
+# Assemble a classifier
+lda = LinearDiscriminantAnalysis()
+csp = CSP(n_components=5, reg=None, log=True, norm_trace=False)
+
+# Use scikit-learn Pipeline with cross_val_score function
+clf = Pipeline([('CSP', csp), ('LDA', lda)])
+scores = cross_val_score(clf, epochs_data_train, labels, cv=cv, n_jobs=1)
+
+# Printing the results
+class_balance = np.mean(labels == labels[0])
+class_balance = max(class_balance, 1. - class_balance)
+print("Classification accuracy: %f / Chance level: %f" % (np.mean(scores),
+                                                         class_balance))
+
+# plot CSP patterns estimated on full data for visualization
+csp.fit_transform(epochs_data, labels)
+#%%
+#csp.plot_patterns(epochs.info, ch_type='eeg', units='Patterns (AU)', size=1.5)
+# %%
+w = 10
+h = 3
+
+plt.figure(figsize=(16,12))
+
+for i,f in enumerate(csp.patterns_[:h*w]):
+    plt.axis("off")
+    ax = plt.subplot(h, w, i+1)
+    ax.set_title(f"{i+1}")
+    ax.imshow(f.reshape((6, 10)).T)
+
+plt.show()
 # %%
