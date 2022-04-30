@@ -41,14 +41,21 @@ paradigm_info = data[61, :] # these correspond to the trial onsets
 finger_movement_onsets = data[62:, :]
 assert  finger_movement_onsets.shape[0]== 5
 raw.load_data().resample(600)  #nyquist theorem
-#events = mne.find_events(raw, stim_channel="paradigm_info")
-#print(events)
+events = mne.find_events(raw, stim_channel="paradigm_info")
+print(events)
 raw.pick_types(ecog=True)
-
+event_id = dict( fist_movement = 1 , peace_movement = 2 , open_hand = 3 )
+epochs = mne.Epochs(raw, events, tmin=-0.75, tmax=0.75, event_id=event_id,
+                    preload=True)
 del data
 gc.collect()
 #%%
-event_id = dict( fist_movement = 1 , peace_movement = 2 , open_hand = 3 )
+for key in event_id.keys():
+    evoked = epochs[key].average()
+    evoked.plot()
+#%%
+#%%
+'''
 event_id_rev = {k:v for v,k in event_id.items()}
 trial_onsets = timings[paradigm_info!=0]
 # since we want the onsets to be in s
@@ -59,13 +66,14 @@ description = [event_id_rev[id] for id in paradigm_info if id!=0]
 annotations = mne.Annotations(trial_onsets, duration_trials, description)
 raw.set_annotations(annotations)
 events, event_id = mne.events_from_annotations(raw)
+'''
 #%%
-
+'''
 
 epochs = mne.Epochs(raw, events, event_id, tmin=0, tmax=2,
                     baseline=(None, 0),
                     preload=False)
-fig = epochs.plot(events=events)
+fig = epochs.plot(events=events)'''
 gc.collect()
 #%%
 #%%
