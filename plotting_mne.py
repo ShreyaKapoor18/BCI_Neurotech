@@ -18,17 +18,22 @@ col_names = [f'CH_{i}' for i in range(2, 62)]
 col_names.extend(['paradigm_info'])
 print(len(col_names))
 sampling_freq = 1200
-ch_types = ['ecog'] * 60 + ['misc']
+ch_types =['misc'] + ['ecog'] * 60 + ['misc']
 
 info = mne.create_info(ch_names=col_names, ch_types=ch_types, sfreq=sampling_freq)
 # Load the data
 data = loadmat(r"C:\Users\Shreya Kapoor\Desktop\ECoG\ECoG_Handpose.mat")['y']
-raw = mne.io.RawArray(data[:61,:], info)
+# Index 1-60 means channels 2-61
+raw = mne.io.RawArray(data[1:61,:], info) # we dont need the first channel
 gc.collect()
 
 raw.load_data().resample(600)  #nyquist theorem
 raw.pick_types(ecog=True)
 #%%
+event_id = dict( fist_movement = 1 , peace_movement = 2 , open_hand = 3 )
+
+
+
 timings = data[0,:]
 delta_t = timings[1] - timings[0]
 del data
