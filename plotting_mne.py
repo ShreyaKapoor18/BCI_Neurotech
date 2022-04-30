@@ -24,17 +24,17 @@ del data
 raw.pick_types(ecog=True)
 
 # Load the data
-raw.load_data()
+raw.load_data().resample(600)
 
 #raw.plot()
 #plt.savefig('results/mne_plot.png')
 picks=['CH_5', 'CH_10', 'CH_15']
 
-raw.plot_psd(picks=picks)
-plt.savefig('results/plot_spectral_density.png')
+raw.plot_psd(average=True)
+#plt.savefig('results/plot_spectral_density.png')
 
 plt.savefig('results/ecog.png')
-raw.plot_sensors(ch_type='ecog')
+#raw.plot_sensors(ch_type='ecog')
 
 # Then we remove line frequency interference
 raw.notch_filter([60], trans_bandwidth=3)
