@@ -1,4 +1,5 @@
 #%%
+from turtle import color
 import mne
 import os.path as op
 
@@ -15,28 +16,39 @@ from scipy import signal
 gc.enable()
 
 col_names = [f'CH_{i}' for i in range(2, 62)]
-col_names.extend(['paradigm_info'])
-print(len(col_names))
 sampling_freq = 1200
-ch_types =['misc'] + ['ecog'] * 60 + ['misc']
+ch_types = ['ecog'] * 60 
 
 info = mne.create_info(ch_names=col_names, ch_types=ch_types, sfreq=sampling_freq)
 # Load the data
 data = loadmat(r"C:\Users\Shreya Kapoor\Desktop\ECoG\ECoG_Handpose.mat")['y']
 # Index 1-60 means channels 2-61
 raw = mne.io.RawArray(data[1:61,:], info) # we dont need the first channel
-gc.collect()
-
-raw.load_data().resample(600)  #nyquist theorem
-raw.pick_types(ecog=True)
-#%%
-event_id = dict( fist_movement = 1 , peace_movement = 2 , open_hand = 3 )
-
-
-
 timings = data[0,:]
 delta_t = timings[1] - timings[0]
+gc.collect()
+# CH62: paradigm info (0...relax, 1...fist movement, 2...peace movement, 3...open hand)
+paradigm_info = data[61, :]
+finger_movement_onsets = data[62:, :]
+assert  finger_movement_onsets.shape[0]== 5
+raw.load_data().resample(600)  #nyquist theorem
+raw.pick_types(ecog=True)
 del data
+
+#%%
+# show when the screen starts presenting stimulus
+# 0 corresponds to the rest timings
+event_id = event_id = dict( fist_movement = 1 , peace_movement = 2 , open_hand = 3 )
+colors = ['red', 'green', 'blue']
+for i in range(1, 4):
+    plt.plot(timings, paradigm_info==i, color=colors[i-1])
+
+
+fix, ax = plt.subplots(5,1)
+ax = ax.ravel()
+for i in range(5):
+    ax[i].plot(timings, finger_movement_onsets[i])
+
 #%%
 '''
 After excluding channels that were notably bad due to
@@ -94,7 +106,7 @@ plt.show()
 
 
 #%%
+# cut the data according to the trial and class
+# in total there are 90 trials, each of around 5s
 
-events, event_id = mne.events_from_annotations(raw)
-print(event_id, events)
 # %%
